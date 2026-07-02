@@ -1,6 +1,11 @@
-// 섹션: DRAPE — 스크롤 시 상단이 천처럼 접히는 효과
-import { Transform, Plane, Program, Mesh } from 'ogl';
+// 섹션: DRAPE — 스크롤 시 상단이 천처럼 접히는 효과 (배경 = assets/works 이미지)
+import { Transform, Plane, Program, Mesh, Texture } from 'ogl';
 import { gl, renderer, camera, lenis } from '../core.js';
+
+const WORKS = [
+  'work-eop', 'work-keel', 'work-luray', 'work-penfed-holiday', 'work-penfed-petals',
+  'work-penfed-tunnel', 'work-rewind24', 'work-rewind25', 'work-sweater', 'work-wpa',
+].map(f => `./assets/works/${f}.webp`);
 
 const VERT = /* glsl */`
   attribute vec3 position; attribute vec2 uv;
@@ -34,12 +39,14 @@ const VERT = /* glsl */`
 
 const FRAG = /* glsl */`
   precision highp float;
-  uniform vec3 uColor; varying vec2 vUv; varying float vShade;
+  uniform sampler2D tImg; uniform float uImgAspect;
+  varying vec2 vUv; varying float vShade;
+  vec2 coverUV(vec2 uv, float ia, float ba){        // cover-fit (평면 비율에 맞춰 크롭)
+    vec2 s = uv - 0.5; if (ba > ia) s.y *= ia / ba; else s.x *= ba / ia; return s + 0.5;
+  }
   void main() {
-    vec3 col = uColor * mix(1.05, 0.85, vUv.y);
-    col *= (1.0 - vShade * 0.55);
-    float line = smoothstep(0.46, 0.5, abs(fract(vUv.y * 18.0) - 0.5));
-    col *= (1.0 - 0.06 * line);
+    vec3 col = texture2D(tImg, coverUV(vUv, uImgAspect, 1280.0 / 853.0)).rgb;
+    col *= (1.0 - vShade * 0.55);                    // 접히는 곳 음영
     gl_FragColor = vec4(col, 1.0);
   }
 `;
@@ -79,16 +86,19 @@ export function createDrape() {
   const items = [];
   for (let i = 0; i < COUNT; i++) {
     const d = document.createElement('div'); d.className = 'item'; scroller.appendChild(d);
-    const program = new Program(gl, {
-      vertex: VERT, fragment: FRAG, cullFace: false,
-      uniforms: {
-        uColor: { value: COLOR }, uViewHeight: { value: innerHeight },
-        uLensRadius: { value: params.uLensRadius }, uMaxAngle: { value: params.uMaxAngle }, uFold: { value: params.uFold },
-        uWaveAmp: { value: params.uWaveAmp }, uWaveFreq: { value: 1.0 },
-        uZWave: { value: params.uZWave }, uZWavelength: { value: params.uZWavelength }, uFlapLen: { value: params.uFlapLen },
-        uBleedPx: { value: 25 }, uOnsetPx: { value: 60 }, uFoldOffset: { value: 0 },
-      },
-    });
+    // 이 평면의 배경 이미지 (assets/works)
+    const tex = new Texture(gl);
+    const uni = {
+      tImg: { value: tex }, uImgAspect: { value: 1280 / 853 }, uViewHeight: { value: innerHeight },
+      uLensRadius: { value: params.uLensRadius }, uMaxAngle: { value: params.uMaxAngle }, uFold: { value: params.uFold },
+      uWaveAmp: { value: params.uWaveAmp }, uWaveFreq: { value: 1.0 },
+      uZWave: { value: params.uZWave }, uZWavelength: { value: params.uZWavelength }, uFlapLen: { value: params.uFlapLen },
+      uBleedPx: { value: 25 }, uOnsetPx: { value: 60 }, uFoldOffset: { value: 0 },
+    };
+    const im = new Image();
+    im.onload = () => { tex.image = im; uni.uImgAspect.value = im.naturalWidth / im.naturalHeight; };
+    im.src = WORKS[i % WORKS.length];
+    const program = new Program(gl, { vertex: VERT, fragment: FRAG, cullFace: false, uniforms: uni });
     const mesh = new Mesh(gl, { geometry: geo, program }); mesh.setParent(scene);
     items.push({ mesh, rel: TOP_PAD + i * (IMG_H + GAP) + IMG_H / 2 });
   }
