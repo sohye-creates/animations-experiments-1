@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>wks-animations</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "ogl": "https://esm.sh/ogl@1.0.11",
+      "lenis": "https://esm.sh/lenis@1.1.13",
+      "lil-gui": "https://esm.sh/lil-gui@0.19"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="gl"></canvas>
+
+  <!-- 섹션들은 js/main.js 가 각 모듈에서 불러와 여기에 삽입 -->
+  <div id="sections"></div>
+
+  <nav class="nav-bar" id="nav"></nav>
+  <div class="hint" id="hint"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
