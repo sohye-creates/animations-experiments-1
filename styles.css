@@ -32,6 +32,7 @@ canvas#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-even
 
 /* ---- 섹션: pixel reveal ---- */
 #sec-pixel { height: 100vh; }
+ 
 
 /* ---- 섹션: pattern ---- */
 #sec-pattern { height: 100vh; }
@@ -115,11 +116,11 @@ canvas#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-even
   100%      { transform: translateY(calc(var(--btn-line, 50px) * -2)); }
 }
 
-/* 상단 검정 페이드 (drape 모듈이 생성) */
+/* 상단 검정 페이드 (drape 모듈이 생성) — drape 섹션에 진입할 때만 보이도록 기본은 꺼둠(0) */
 .top-fade {
   position: fixed; top: 0; left: 0; width: 100vw; height: 15vh;
   background: linear-gradient(to bottom, #000 0%, transparent 50%);
-  pointer-events: none; z-index: 5; opacity: 1; transition: opacity .5s;
+  pointer-events: none; z-index: 5; opacity: 0; transition: opacity .5s;
 }
 
 /* 하단 중앙 미니멀 네비게이션 바 (이름 링크) */

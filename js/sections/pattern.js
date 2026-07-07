@@ -74,7 +74,7 @@ const FRAG = /* glsl */`
 
 export function createPattern() {
   const params = {
-    uImgW: 900, uCell: 8, uRadius: 280, uFade: 40, uOpacity: 0.7,
+    uImgW: 1200, uCell: 6, uRadius: 180, uFade: 40, uOpacity: 0.7,
     uJitter: 0.12, uThresh: 0.4, uDither: 0.15,
     purple: '#5741D3', blue1: '#476DDE', blue2: '#369AE9', cyan1: '#15F2FE', cyan2: '#26C6F3',
   };

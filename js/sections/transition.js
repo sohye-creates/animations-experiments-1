@@ -1,6 +1,6 @@
 // 섹션: TRANSITION — 어두운(이미지+First Section) 페이지가 고정된 채,
-// 스크롤하면 흰 페이지가 픽셀 커튼(20px, 4가지 화이트/그레이)으로 아래→위 번지며 덮고,
-// 다 덮이면 "Second Section"(검은 텍스트) 내용이 뜸.
+// 스크롤하면 검정 페이지가 픽셀 커튼(20px, 4가지 그레이)으로 아래→위 번지며 덮고,
+// 다 덮이면 "Second Section"(흰 텍스트) 내용이 뜸.
 import { Transform, Plane, Program, Mesh, Texture } from 'ogl';
 import { gl, renderer, camera } from '../core.js';
 import { textTexture } from '../text.js';
@@ -55,12 +55,12 @@ const FRAG = /* glsl */`
 
     vec3 col;
     if (d > 0.0) {
-      // 앞단은 그레이 픽셀, 뒤로 갈수록 흰색으로 정착
+      // 앞단은 그레이 픽셀, 뒤로 갈수록 검정으로 정착
       float edge = smoothstep(0.12, 0.0, d);
-      col = mix(vec3(1.0), pick(rnd2), edge);
-      // 다 덮인 뒤 "Second Section"(검은 글자)
+      col = mix(vec3(0.0), pick(rnd2), edge);
+      // 다 덮인 뒤 "Second Section"(흰 글자, 검정 배경 위)
       float contentP = smoothstep(uContentStart, 1.0, uProgress);
-      col = mix(col, vec3(0.0), textA(tText2, c, uT2Aspect) * contentP);
+      col = mix(col, vec3(1.0), textA(tText2, c, uT2Aspect) * contentP);
     } else {
       col = page1;
     }
@@ -71,7 +71,7 @@ const FRAG = /* glsl */`
 export function createTransition() {
   const params = {
     pixel: 20, scatter: 0.22, darken: 0.4, curtainEnd: 0.7, contentStart: 0.82,
-    c0: '#FFFFFF', c1: '#F1F1F1', c2: '#D6D6D6', c3: '#B1B1B1',
+    c0: '#0E0E10', c1: '#414143', c2: '#767678', c3: '#C4C4C5',
   };
   const controls = [
     { key: 'pixel', min: 6, max: 60, step: 2, info: 'Pixel square size (px).' },
