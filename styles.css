@@ -16,6 +16,12 @@ body { color: #fff; font-family: 'Aeonik', system-ui, sans-serif; }
 /* 공유 WebGL 캔버스: 화면 고정 */
 canvas#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 1; }
 
+/* ---- 섹션: hero (회전하는 이중 원형 텍스트 + 소용돌이 + 스크롤 시 커지는 키홀) ---- */
+#sec-hero { height: 240vh; position: relative; background: #000; }
+
+/* ---- 섹션: eye (하프톤 도트 눈 + 커서 따라가는 눈동자) ---- */
+#sec-eye { height: 100vh; position: relative; background: #000; }
+
 /* ---- 섹션: drape ---- */
 #sec-drape { position: relative; }
 #scroller { position: relative; z-index: 0; }
@@ -38,6 +44,33 @@ canvas#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-even
 
 /* ---- 섹션: logo (반분할 + 픽셀 로고 전환) ---- */
 #sec-logo { height: 100vh; }
+
+/* ---- 섹션: list (directional-aware hover post list) ---- */
+#sec-list { min-height: 100vh; background: #fff; color: #111; --accent: #C6F000; --dl-dur: .42s; }
+.dl-wrap { max-width: 1360px; margin: 0 auto; padding: 90px 48px 80px; }
+.dl-h { font-family: 'Aeonik'; font-weight: 500; font-size: 40px; letter-spacing: -.01em; }
+.dl-viewall {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+  background: #000; color: #fff; border: 0; border-radius: 7px; padding: 12px 18px;
+  font: 500 14px 'Aeonik'; cursor: pointer;
+}
+.dl-list { margin-top: 44px; border-top: 1px solid #e6e6e6; }
+.dl-row {
+  position: relative; overflow: hidden;
+  display: grid; grid-template-columns: minmax(0,1fr) 132px 232px; align-items: center; gap: 32px;
+  padding: 26px 24px; border-bottom: 1px solid #e6e6e6; --thumb-h: 64px; cursor: pointer;
+}
+.dl-fill { position: absolute; inset: 0; background: var(--accent); transform: translateY(-101%); z-index: 0; }
+.dl-row > *:not(.dl-fill) { position: relative; z-index: 1; }
+.dl-rt { font-family: 'Aeonik'; font-weight: 500; font-size: 21px; line-height: 1.3; max-width: 660px; }
+.dl-pill { justify-self: center; border: 1px solid #cfcfcf; border-radius: 999px; padding: 8px 20px; font-size: 13px; color: #333; }
+.dl-thumb {
+  justify-self: end; width: 116px; height: var(--thumb-h); overflow: hidden; border-radius: 3px;
+  transition: width var(--dl-dur) cubic-bezier(.4,0,.1,1), height var(--dl-dur) cubic-bezier(.4,0,.1,1);
+}
+.dl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dl-row:hover { --thumb-h: 118px; }
+.dl-row:hover .dl-thumb { width: 232px; }
 .btn-demo {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: var(--demo-w, 820px); height: var(--demo-h, 460px);

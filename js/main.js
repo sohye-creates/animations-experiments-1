@@ -1,13 +1,16 @@
 // 섹션 모듈들을 불러와 조립 + 루프 + 네비게이션 + 컨트롤 패널
 import { lenis, mountCanvas, resize } from './core.js';
 import GUI from 'lil-gui';
+// import { createHero } from './sections/hero.js';   // 현재 프론트에는 노출 안 함(코드는 보존)
+import { createEye } from './sections/eye.js';
 import { createDrape } from './sections/drape.js';
-import { createComing } from './sections/coming.js';
+// import { createComing } from './sections/coming.js';   // 현재 프론트에는 노출 안 함(코드는 보존)
 import { createPixel } from './sections/pixel.js';
 import { createPattern } from './sections/pattern.js';
 import { createCursor } from './sections/cursor.js';
 import { createTransition } from './sections/transition.js';
 import { createLogo } from './sections/logo.js';
+import { createList } from './sections/list.js';
 
 mountCanvas();
 
@@ -21,7 +24,7 @@ try {
 } catch (e) {}
 
 // 여기에 섹션을 추가하면 자동으로 DOM·네비·전환·패널이 반영됨
-const sections = [createDrape(), createComing(), createPixel(), createPattern(), createCursor(), createTransition(), createLogo()];
+const sections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList()];
 
 const container = document.getElementById('sections');
 sections.forEach(s => container.appendChild(s.el));

@@ -35,12 +35,12 @@ const FRAG = /* glsl */`
 
   float hash(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
 
-  // 반쪽 중앙에 놓인 로고 알파 (px: 화면 픽셀, center: 반쪽 중앙 px)
-  float logoA(sampler2D t, float aspect, vec2 px, vec2 center){
+  // 왼쪽 기준선(leftX)에 정렬된 로고 알파 (px: 화면 픽셀, centerY: 반쪽 세로 중앙)
+  float logoA(sampler2D t, float aspect, vec2 px, float leftX, float centerY){
     float H = uLogoH, W = H * aspect;
-    vec2 uvl = (px - center) / vec2(W, H) + 0.5;
+    vec2 uvl = vec2((px.x - leftX) / W, (px.y - centerY) / H + 0.5);
     float ins = step(0.0,uvl.x)*step(uvl.x,1.0)*step(0.0,uvl.y)*step(uvl.y,1.0);
-    return texture2D(t, vec2(uvl.x, uvl.y)).a * ins;
+    return texture2D(t, uvl).a * ins;
   }
 
   void main(){
@@ -49,14 +49,21 @@ const FRAG = /* glsl */`
     float hover = left ? uHoverL : uHoverR;
     vec3 bg  = left ? uLeftBg  : uRightBg;
     vec3 ink = left ? uLeftInk : uRightInk;
-    vec2 center = vec2(left ? uRes.x * 0.25 : uRes.x * 0.75, uRes.y * 0.5);
+    // 반쪽 전체는 그대로 중앙 배치 — 더 넓은 로고(보통 워드마크) 기준으로 중앙을 잡고,
+    // 이미지 로고는 그 왼쪽 기준선에만 맞춰서 둘 사이의 정렬만 왼쪽 기준으로 통일.
+    float halfCenterX = left ? uRes.x * 0.25 : uRes.x * 0.75;
+    float maxW = uLogoH * max(uImgAspect, uWordAspect);
+    float leftX = halfCenterX - maxW * 0.5;
+    float centerY = uRes.y * 0.5;
 
     // 픽셀 셀마다 이미지/워드 선택 (hover 진행에 따라 랜덤하게 flip → 픽셀 전환)
     vec2 cell = floor(px / uCell);
-    float showWord = step(hash(cell), hover);
+    // hover가 사실상 0일 때는 hash(cell)이 부동소수점상 0에 아주 가깝게 나오는 셀이 있어도
+    // 절대 워드 로고가 새어나오지 않도록(잔재 픽셀 방지) 최소 임계값으로 완전히 잠금.
+    float showWord = step(1e-4, hover) * step(hash(cell), hover);
 
-    float a = mix(logoA(tImgLogo, uImgAspect, px, center),
-                  logoA(tWordLogo, uWordAspect, px, center), showWord);
+    float a = mix(logoA(tImgLogo, uImgAspect, px, leftX, centerY),
+                  logoA(tWordLogo, uWordAspect, px, leftX, centerY), showWord);
 
     gl_FragColor = vec4(mix(bg, ink, a), 1.0);
   }
