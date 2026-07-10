@@ -12,8 +12,9 @@ import { createCursor } from './sections/cursor.js';
 import { createTransition } from './sections/transition.js';
 import { createLogo } from './sections/logo.js';
 import { createList } from './sections/list.js';
-import { createVideoReveal } from './sections/videoReveal.js';
-import { createWhiteOut } from './sections/whiteOut.js';
+import { createAsciiReveal } from './sections/asciiReveal.js';
+// import { createVideoReveal } from './sections/videoReveal.js';   // flow에 이렇게(드레이프 뒤 별개 섹션) 넣을 게 아니라서 뺌(코드는 보존 — drape 마지막 아이템과 합쳐지는 형태로 나중에 다시 붙일 계획)
+// import { createWhiteOut } from './sections/whiteOut.js';         // 위 videoReveal의 <video>가 있어야 동작해서 같이 뺌(코드는 보존)
 
 mountCanvas();
 
@@ -27,23 +28,22 @@ try {
 } catch (e) {}
 
 // 여기에 섹션을 추가하면 자동으로 DOM·네비·전환·패널이 반영됨
-const demoSections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList()];
+const demoSections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList(), createAsciiReveal()];
 
 // ── FLOW: 지금까지 만든 섹션들을 하나로 이어붙인 연속 시퀀스 (client/partners 직전까지).
 // 기존 개별 데모 섹션들은 위에 그대로 두고, 새 인스턴스로 맨 끝에 이어붙임 — 기존 것은 안 건드림.
 // hero-pixels(원형 텍스트 링 파티클 + 키홀 화이트아웃) → pixel reveal → drape(진입 시 배경이
 // 이미지 뒤에서 백→흑 커튼으로 전환 — transition은 독립 섹션이 아니라 drape 진입부에 녹아있음)
-// → video reveal(귀 그래픽) → white out
+// drape 다음(video reveal · white out)은 아직 안 붙임 — drape 마지막 아이템과 이어지는
+// 형태로 다시 설계할 예정(현재처럼 뚝 끊기고 별개 섹션으로 등장하는 방식은 아님).
 const flowHero = createHeroPixels();
 flowHero.label = 'flow · hero';
 const flowPixel = createPixel();
 flowPixel.id = 'flow-pixel'; flowPixel.label = 'flow · pixel'; flowPixel.el.id = 'sec-pixel-flow';
 const flowDrape = createDrape({ introCurtain: true });
 flowDrape.id = 'flow-drape'; flowDrape.label = 'flow · drape'; flowDrape.el.id = 'sec-drape-flow';
-const flowVideo = createVideoReveal();
-const flowWhite = createWhiteOut(flowVideo.videoEl);
 
-const flowSections = [flowHero, flowPixel, flowDrape, flowVideo, flowWhite];
+const flowSections = [flowHero, flowPixel, flowDrape];
 const sections = [...demoSections, ...flowSections];
 
 const container = document.getElementById('sections');

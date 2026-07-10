@@ -161,6 +161,23 @@ canvas#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-even
 .nav-link:hover { color: rgba(255,255,255,.8); }
 .nav-link.active { color: #fff; background: rgba(255,255,255,.12); }
 
+/* ---- 섹션: ascii reveal (이미지 → 문자 변환 토글 데모) ---- */
+#sec-ascii { height: 100vh; position: relative; background: #0b0b0c; display: flex; align-items: center; justify-content: center; }
+.ai-wrap { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.ai-frame { position: relative; width: 1200px; height: 680px; overflow: hidden; border-radius: 4px; background: #111; }
+.ai-img, .ai-text-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ai-img { object-fit: cover; transition: opacity .5s ease; }
+.ai-text-canvas {
+  pointer-events: none; opacity: 0; transition: opacity .2s ease;   /* 글자/배경색은 JS가 params로 채움 */
+}
+.ai-toggle {
+  appearance: none; border: 1px solid rgba(255,255,255,.25); background: transparent; color: #fff;
+  font: 500 12px 'Aeonik', system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase;
+  padding: 10px 20px; border-radius: 999px; cursor: pointer; transition: background .25s, color .25s;
+}
+.ai-toggle:hover { background: #fff; color: #000; }
+.ai-toggle.on { background: #C6F000; color: #000; border-color: #C6F000; }
+
 .hint {
   position: fixed; left: 16px; bottom: 16px; z-index: 6;
   font-size: 12px; letter-spacing: .04em; color: rgba(255,255,255,.45);
