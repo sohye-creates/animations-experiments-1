@@ -1,8 +1,8 @@
 // 섹션: WARP TEXT — 노이즈 자율 모션 + 마우스 스프링 추적 + 하프톤
 // morable.co (Unicorn Studio) 설정 참고:
 //   noise speed 0.25 / trackMouse 0.12 / mouseMomentum 0.8 / mouseSpring 0.58
-import { Transform, Plane, Program, Mesh } from 'ogl';
-import { gl, renderer, camera } from '../core.js';
+import * as THREE from 'three';
+import { renderer, camera } from '../core.js';
 import { textTexture } from '../text.js';
 
 const VERT = /* glsl */`
@@ -72,20 +72,20 @@ export function createComing() {
     { key: 'uNoiseScale', min: 1, max: 8, step: 0.2, info: 'Noise detail. Larger = finer ripples.' },
   ];
 
-  const scene = new Transform();
+  const scene = new THREE.Scene();
   const { tex, aspect } = textTexture('WORKS KEPT SECRET');
-  const program = new Program(gl, {
-    vertex: VERT, fragment: FRAG, cullFace: false,
+  const material = new THREE.RawShaderMaterial({
+    vertexShader: VERT, fragmentShader: FRAG, side: THREE.DoubleSide,
     uniforms: {
       tText: { value: tex }, uTexAspect: { value: aspect },
-      uRes: { value: [innerWidth, innerHeight] }, uMouse: { value: [0.5, 0.5] }, uTime: { value: 0 },
+      uRes: { value: new THREE.Vector2(innerWidth, innerHeight) }, uMouse: { value: new THREE.Vector2(0.5, 0.5) }, uTime: { value: 0 },
       uFollow: { value: params.uFollow }, uIdle: { value: params.uIdle }, uRepel: { value: params.uRepel },
       uSpeed: { value: params.uSpeed }, uNoiseScale: { value: params.uNoiseScale },
     },
   });
-  const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
   mesh.frustumCulled = false;
-  mesh.setParent(scene);
+  scene.add(mesh);
 
   const el = document.createElement('section'); el.id = 'sec-coming';
 
@@ -98,11 +98,11 @@ export function createComing() {
     render(now) {
       vmx += (tmx - mx) * 0.2; vmx *= 0.8; mx += vmx;
       vmy += (tmy - my) * 0.2; vmy *= 0.8; my += vmy;
-      const u = program.uniforms;
-      u.uTime.value = (now || 0) / 1000; u.uMouse.value = [mx, my]; u.uRes.value = [innerWidth, innerHeight];
+      const u = material.uniforms;
+      u.uTime.value = (now || 0) / 1000; u.uMouse.value.set(mx, my); u.uRes.value.set(innerWidth, innerHeight);
       u.uFollow.value = params.uFollow; u.uIdle.value = params.uIdle; u.uRepel.value = params.uRepel;
       u.uSpeed.value = params.uSpeed; u.uNoiseScale.value = params.uNoiseScale;
-      renderer.render({ scene, camera });
+      renderer.render(scene, camera);
     },
   };
 }

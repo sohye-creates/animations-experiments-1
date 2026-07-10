@@ -11,10 +11,9 @@
 //          하양 → 하늘색(15F2FE)으로 단순 fade in.
 // intro-5: mouseout 되면 단어 쪽은 위 과정이 그대로 역재생되지만, 배경은 단순 fade out이
 //          아니라 소용돌이 모양으로 번지는 하프톤(테두리 도형 → 채워진 도형)이 퍼지며 사라짐.
-import { Transform, Plane, Program, Mesh, Texture } from 'ogl';
-import { gl, renderer, camera } from '../core.js';
+import * as THREE from 'three';
+import { renderer, camera } from '../core.js';
 
-const hexToRgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
 const clamp01 = v => Math.min(1, Math.max(0, v));
 
 // 문장을 토큰으로 분해. boxed=true → 내용어(검은 박스로 가려졌다가 hover로만 드러남),
@@ -286,10 +285,12 @@ export function createPixel() {
     { key: 'lineColor', color: true, info: 'Intro grid line color.' },
   ];
 
-  const scene = new Transform();
+  const scene = new THREE.Scene();
   let layout = buildLayout(params);
   let layoutCache = { fontPx: params.fontPx, lineHeightMult: params.lineHeightMult, blockWpx: params.blockWpx };
-  const tText = new Texture(gl, { image: layout.canvas, generateMipmaps: false });
+  const tText = new THREE.Texture(layout.canvas);
+  tText.generateMipmaps = false;
+  tText.needsUpdate = true;
 
   const mk = (fill = 0) => new Array(MAX_BOXES).fill(fill);
   const uBoxX0 = mk(2), uBoxY0 = mk(2), uBoxX1 = mk(2), uBoxY1 = mk(2);
@@ -304,26 +305,26 @@ export function createPixel() {
   }
   applyBoxesToStaticUniforms(layout);
 
-  const program = new Program(gl, {
-    vertex: VERT, fragment: FRAG, cullFace: false,
+  const material = new THREE.RawShaderMaterial({
+    vertexShader: VERT, fragmentShader: FRAG, side: THREE.DoubleSide,
     uniforms: {
       tText: { value: tText }, uTexAspect: { value: layout.texAspect },
-      uRes: { value: [innerWidth, innerHeight] }, uBlockScale: { value: params.blockScale },
+      uRes: { value: new THREE.Vector2(innerWidth, innerHeight) }, uBlockScale: { value: params.blockScale },
       uCellScale: { value: params.cellScale }, uScatter: { value: params.scatter }, uDwell: { value: params.dwell },
       uHoverGlobal: { value: 0 }, uTime: { value: 0 }, uIntroT: { value: 0 }, uTailFrac: { value: params.tailFrac },
       uLineSpacing: { value: params.lineSpacing }, uLineColStagger: { value: params.lineColStagger }, uLineGrowDur: { value: params.lineDur },
       uLeaveT: { value: -1 }, uSwirlDur: { value: params.swirlDur }, uSkyCell: { value: params.skyCell },
-      uBg: { value: hexToRgb(params.bg) }, uInk: { value: hexToRgb(params.ink) }, uCover: { value: hexToRgb(params.cover) },
-      uGradFrom: { value: hexToRgb(params.gradFrom) }, uGradTo: { value: hexToRgb(params.gradTo) },
-      uSkyColor: { value: hexToRgb(params.skyColor) }, uSkyDot: { value: hexToRgb(params.skyDot) },
-      uLineColor: { value: hexToRgb(params.lineColor) },
+      uBg: { value: new THREE.Color(params.bg) }, uInk: { value: new THREE.Color(params.ink) }, uCover: { value: new THREE.Color(params.cover) },
+      uGradFrom: { value: new THREE.Color(params.gradFrom) }, uGradTo: { value: new THREE.Color(params.gradTo) },
+      uSkyColor: { value: new THREE.Color(params.skyColor) }, uSkyDot: { value: new THREE.Color(params.skyDot) },
+      uLineColor: { value: new THREE.Color(params.lineColor) },
       uBoxX0: { value: uBoxX0 }, uBoxY0: { value: uBoxY0 }, uBoxX1: { value: uBoxX1 }, uBoxY1: { value: uBoxY1 },
       uBoxKind: { value: uBoxKind }, uBoxAppear: { value: uBoxAppear }, uBoxState: { value: uBoxState },
     },
   });
-  const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
   mesh.frustumCulled = false;
-  mesh.setParent(scene);
+  scene.add(mesh);
 
   const el = document.createElement('section'); el.id = 'sec-pixel';
 
@@ -355,7 +356,7 @@ export function createPixel() {
       if (layoutCache.fontPx !== params.fontPx || layoutCache.lineHeightMult !== params.lineHeightMult || layoutCache.blockWpx !== params.blockWpx) {
         layout = buildLayout(params);
         layoutCache = { fontPx: params.fontPx, lineHeightMult: params.lineHeightMult, blockWpx: params.blockWpx };
-        tText.image = layout.canvas;
+        tText.image = layout.canvas; tText.needsUpdate = true;
         applyBoxesToStaticUniforms(layout);
       }
 
@@ -382,18 +383,18 @@ export function createPixel() {
         }
       }
 
-      const u = program.uniforms;
-      u.uRes.value = [innerWidth, innerHeight]; u.uTexAspect.value = layout.texAspect;
+      const u = material.uniforms;
+      u.uRes.value.set(innerWidth, innerHeight); u.uTexAspect.value = layout.texAspect;
       u.uBlockScale.value = params.blockScale; u.uCellScale.value = params.cellScale;
       u.uScatter.value = params.scatter; u.uDwell.value = params.dwell; u.uTailFrac.value = params.tailFrac;
       u.uHoverGlobal.value = hoverGlobal; u.uTime.value = now * 0.001; u.uIntroT.value = t;
       u.uLineSpacing.value = params.lineSpacing; u.uLineColStagger.value = params.lineColStagger; u.uLineGrowDur.value = params.lineDur;
       u.uLeaveT.value = leaveT; u.uSwirlDur.value = params.swirlDur; u.uSkyCell.value = params.skyCell;
-      u.uBg.value = hexToRgb(params.bg); u.uInk.value = hexToRgb(params.ink); u.uCover.value = hexToRgb(params.cover);
-      u.uGradFrom.value = hexToRgb(params.gradFrom); u.uGradTo.value = hexToRgb(params.gradTo);
-      u.uSkyColor.value = hexToRgb(params.skyColor); u.uSkyDot.value = hexToRgb(params.skyDot);
-      u.uLineColor.value = hexToRgb(params.lineColor);
-      renderer.render({ scene, camera });
+      u.uBg.value.set(params.bg); u.uInk.value.set(params.ink); u.uCover.value.set(params.cover);
+      u.uGradFrom.value.set(params.gradFrom); u.uGradTo.value.set(params.gradTo);
+      u.uSkyColor.value.set(params.skyColor); u.uSkyDot.value.set(params.skyDot);
+      u.uLineColor.value.set(params.lineColor);
+      renderer.render(scene, camera);
     },
   };
 }

@@ -2,7 +2,7 @@
 // 행에 hover 하면 커서가 들어온 방향(위/아래/좌/우)에서 색상 블럭이 슬라이드로 채워지고
 // 이미지가 커짐. 커서를 리스트로 움직이면 각 행이 순차로 블럭을 들이고 내보내 → 흐르는 느낌.
 // 실제 그림은 DOM/CSS. 이 섹션의 WebGL 렌더는 캔버스를 비우기만 함.
-import { Transform } from 'ogl';
+import * as THREE from 'three';
 import { renderer, camera } from '../core.js';
 
 const ROWS = [
@@ -30,7 +30,7 @@ export function createList() {
     { key: 'dur', min: 0.15, max: 1, step: 0.02, info: 'Fill / image transition speed (s).' },
   ];
 
-  const scene = new Transform();  // 캔버스 클리어용
+  const scene = new THREE.Scene();  // 캔버스 클리어용
 
   const el = document.createElement('section'); el.id = 'sec-list';
   const wrap = document.createElement('div'); wrap.className = 'dl-wrap';
@@ -69,7 +69,7 @@ export function createList() {
     render() {
       el.style.setProperty('--accent', params.accent);
       el.style.setProperty('--dl-dur', params.dur + 's');
-      renderer.render({ scene, camera });                   // 캔버스 클리어 (이전 섹션 잔상 제거)
+      renderer.render(scene, camera);                   // 캔버스 클리어 (이전 섹션 잔상 제거)
     },
   };
 }

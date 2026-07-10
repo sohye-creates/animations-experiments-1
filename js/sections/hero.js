@@ -3,10 +3,9 @@
 // 빗방울 모양 띠(strip) 텍스처를 극좌표로 감아서 만든 소용돌이(디자이너 레퍼런스 그대로 포팅)가
 // 안쪽 원 둘레에서 시작해 중심(키홀)으로 갈수록 얇아지고 어두워지며 빨려든다.
 // 스크롤하면 키홀(SVG)이 화면을 덮을 만큼 커지며(+ 줌인) 다음 섹션으로 전환됨.
-import { Transform, Plane, Program, Mesh, Texture } from 'ogl';
-import { gl, renderer, camera } from '../core.js';
-
-const hexToRgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+// (참고: flow 시퀀스의 hero 자리는 이제 heroPixels.js가 대체 — 이 파일은 코드 보존용)
+import * as THREE from 'three';
+import { renderer, camera } from '../core.js';
 
 const WORD = 'WORSTKEPTSECRET';
 const RING_REPEATS = 2;          // 원 한 바퀴에 문구가 두 번 반복
@@ -41,7 +40,10 @@ function ringTextTexture(text, repeats, radiusFrac, size = 2048) {
     ctx.restore();
     ctx.rotate(a / 2);
   }
-  return new Texture(gl, { image: c, generateMipmaps: false, wrapS: gl.CLAMP_TO_EDGE, wrapT: gl.CLAMP_TO_EDGE });
+  const tex = new THREE.CanvasTexture(c);
+  tex.generateMipmaps = false;
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
 }
 
 // 인라인 SVG(키홀 아이콘) → 알파 마스크 텍스처
@@ -49,13 +51,15 @@ const KEYHOLE_SVG = '<svg width="48" height="72" viewBox="0 0 48 72" xmlns="http
   + '<path d="M36 6H42V24H36V42H42V54H48V72H0V54H6V42H12V24H6V6H12V0H36V6Z" fill="#fff"/></svg>';
 
 function svgAlphaTex(svgStr, height = 512) {
-  const info = { tex: new Texture(gl, { generateMipmaps: false }), aspect: 48 / 72 };
+  const tex = new THREE.Texture();
+  tex.generateMipmaps = false;
+  const info = { tex, aspect: 48 / 72 };
   const img = new Image();
   img.onload = () => {
     const w = Math.round(height * img.naturalWidth / img.naturalHeight);
     const c = document.createElement('canvas'); c.width = w; c.height = height;
     c.getContext('2d').drawImage(img, 0, 0, w, height);
-    info.tex.image = c; info.aspect = w / height;
+    info.tex.image = c; info.tex.needsUpdate = true; info.aspect = w / height;
   };
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgStr);
   return info;
@@ -64,11 +68,12 @@ function svgAlphaTex(svgStr, height = 512) {
 // 소용돌이 "띠(strip)" 텍스처(assets/vortex-strip.png, 1024x256) — 극좌표로 감아서 샘플링됨.
 // x축 = 각도(0..2π, seamless 반복), y축 = 중심 홀(0)→안쪽 원 둘레(1) 반지름. 아래쪽(1)이 굵고 위쪽(0)이 뾰족.
 function vortexStripTex() {
-  const tex = new Texture(gl, {
-    generateMipmaps: false, wrapS: gl.REPEAT, wrapT: gl.CLAMP_TO_EDGE, minFilter: gl.LINEAR, magFilter: gl.LINEAR,
-  });
+  const tex = new THREE.Texture();
+  tex.generateMipmaps = false;
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.minFilter = tex.magFilter = THREE.LinearFilter;
   const img = new Image();
-  img.onload = () => { tex.image = img; };
+  img.onload = () => { tex.image = img; tex.needsUpdate = true; };
   img.src = './assets/vortex-strip.png';
   return tex;
 }
@@ -197,16 +202,16 @@ export function createHero() {
     { key: 'holeFill', color: true, info: 'Color revealed through the keyhole as it opens.' },
   ];
 
-  const scene = new Transform();
+  const scene = new THREE.Scene();
   const ringTex = ringTextTexture(WORD, RING_REPEATS, RING_R_FRAC);
   const hole = svgAlphaTex(KEYHOLE_SVG);
   const vortexTex = vortexStripTex();
 
-  const program = new Program(gl, {
-    vertex: VERT, fragment: FRAG, cullFace: false,
+  const material = new THREE.RawShaderMaterial({
+    vertexShader: VERT, fragmentShader: FRAG, side: THREE.DoubleSide,
     uniforms: {
       tRing: { value: ringTex }, tHole: { value: hole.tex }, tVortex: { value: vortexTex },
-      uRes: { value: [innerWidth, innerHeight] },
+      uRes: { value: new THREE.Vector2(innerWidth, innerHeight) },
       uOuterAngle: { value: 0 }, uOuterR: { value: 500 },
       uInnerAngle: { value: 0 }, uInnerR: { value: 420 },
       uPixelCell: { value: params.pixelCell }, uBgArms: { value: params.bgArms },
@@ -216,13 +221,13 @@ export function createHero() {
       uVortexPixel: { value: params.vortexPixel }, uVortexScale: { value: params.vortexScale },
       uZoom: { value: 1 },
       uHoleW: { value: params.keyholeMinH * hole.aspect }, uHoleH: { value: params.keyholeMinH }, uOpenT: { value: 0 },
-      uGlowStrength: { value: params.glowStrength }, uGlowColor: { value: hexToRgb(params.glowColor) },
-      uTextColor: { value: hexToRgb(params.textColor) },
-      uKeyholeColor: { value: hexToRgb(params.keyholeColor) }, uHoleFill: { value: hexToRgb(params.holeFill) },
+      uGlowStrength: { value: params.glowStrength }, uGlowColor: { value: new THREE.Color(params.glowColor) },
+      uTextColor: { value: new THREE.Color(params.textColor) },
+      uKeyholeColor: { value: new THREE.Color(params.keyholeColor) }, uHoleFill: { value: new THREE.Color(params.holeFill) },
     },
   });
-  const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program });
-  mesh.frustumCulled = false; mesh.setParent(scene);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  mesh.frustumCulled = false; scene.add(mesh);
 
   const el = document.createElement('section'); el.id = 'sec-hero';
 
@@ -238,8 +243,8 @@ export function createHero() {
 
       const innerAngle = t * params.innerSpeed * Math.PI / 180;
 
-      const u = program.uniforms;
-      u.uRes.value = [innerWidth, innerHeight];
+      const u = material.uniforms;
+      u.uRes.value.set(innerWidth, innerHeight);
       u.uOuterAngle.value = t * params.outerSpeed * Math.PI / 180;
       u.uOuterR.value = outerR;
       u.uInnerAngle.value = innerAngle;
@@ -256,11 +261,11 @@ export function createHero() {
       u.uHoleH.value = holeH; u.uHoleW.value = holeH * hole.aspect;
       u.uOpenT.value = Math.min(1, p * 1.8);
 
-      u.uGlowStrength.value = params.glowStrength; u.uGlowColor.value = hexToRgb(params.glowColor);
-      u.uTextColor.value = hexToRgb(params.textColor);
-      u.uKeyholeColor.value = hexToRgb(params.keyholeColor);
-      u.uHoleFill.value = hexToRgb(params.holeFill);
-      renderer.render({ scene, camera });
+      u.uGlowStrength.value = params.glowStrength; u.uGlowColor.value.set(params.glowColor);
+      u.uTextColor.value.set(params.textColor);
+      u.uKeyholeColor.value.set(params.keyholeColor);
+      u.uHoleFill.value.set(params.holeFill);
+      renderer.render(scene, camera);
     },
   };
 }

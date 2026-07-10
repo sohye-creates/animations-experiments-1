@@ -1,7 +1,8 @@
 // 섹션 모듈들을 불러와 조립 + 루프 + 네비게이션 + 컨트롤 패널
-import { lenis, mountCanvas, resize } from './core.js';
+import { lenis, mountCanvas, resize, renderer } from './core.js';
 import GUI from 'lil-gui';
-// import { createHero } from './sections/hero.js';   // 현재 프론트에는 노출 안 함(코드는 보존)
+// import { createHero } from './sections/hero.js';   // flow의 hero 자리는 이제 heroPixels로 대체(코드는 보존)
+import { createHeroPixels } from './sections/heroPixels.js';
 import { createEye } from './sections/eye.js';
 import { createDrape } from './sections/drape.js';
 // import { createComing } from './sections/coming.js';   // 현재 프론트에는 노출 안 함(코드는 보존)
@@ -11,6 +12,8 @@ import { createCursor } from './sections/cursor.js';
 import { createTransition } from './sections/transition.js';
 import { createLogo } from './sections/logo.js';
 import { createList } from './sections/list.js';
+import { createVideoReveal } from './sections/videoReveal.js';
+import { createWhiteOut } from './sections/whiteOut.js';
 
 mountCanvas();
 
@@ -24,18 +27,42 @@ try {
 } catch (e) {}
 
 // 여기에 섹션을 추가하면 자동으로 DOM·네비·전환·패널이 반영됨
-const sections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList()];
+const demoSections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList()];
+
+// ── FLOW: 지금까지 만든 섹션들을 하나로 이어붙인 연속 시퀀스 (client/partners 직전까지).
+// 기존 개별 데모 섹션들은 위에 그대로 두고, 새 인스턴스로 맨 끝에 이어붙임 — 기존 것은 안 건드림.
+// hero-pixels(원형 텍스트 링 파티클 + 키홀 화이트아웃) → pixel reveal → drape(진입 시 배경이
+// 이미지 뒤에서 백→흑 커튼으로 전환 — transition은 독립 섹션이 아니라 drape 진입부에 녹아있음)
+// → video reveal(귀 그래픽) → white out
+const flowHero = createHeroPixels();
+flowHero.label = 'flow · hero';
+const flowPixel = createPixel();
+flowPixel.id = 'flow-pixel'; flowPixel.label = 'flow · pixel'; flowPixel.el.id = 'sec-pixel-flow';
+const flowDrape = createDrape({ introCurtain: true });
+flowDrape.id = 'flow-drape'; flowDrape.label = 'flow · drape'; flowDrape.el.id = 'sec-drape-flow';
+const flowVideo = createVideoReveal();
+const flowWhite = createWhiteOut(flowVideo.videoEl);
+
+const flowSections = [flowHero, flowPixel, flowDrape, flowVideo, flowWhite];
+const sections = [...demoSections, ...flowSections];
 
 const container = document.getElementById('sections');
 sections.forEach(s => container.appendChild(s.el));
+// pixel → drape 핸드오프 구간(아래 loop 참고)만큼 flow-pixel 섹션을 더 늘려서,
+// 핸드오프가 시작될 때 pixel이 이미 충분히 보여진 뒤이도록 함.
+flowPixel.el.style.height = `calc(100vh + ${flowDrape.params.curtainRange}px)`;
 lenis.resize();
 
-// 하단 중앙 네비게이션 (섹션 이름 링크)
+// 하단 중앙 네비게이션 — 개별 데모 섹션은 각자 버튼, flow 시퀀스는 하나로 묶어 "flow" 버튼 하나만
+const navGroups = [
+  ...demoSections.map(s => ({ label: s.label, sections: [s], target: s.el.id })),
+  { label: 'flow', sections: flowSections, target: flowHero.el.id },
+];
 const nav = document.getElementById('nav');
-const links = sections.map(s => {
+const links = navGroups.map(g => {
   const b = document.createElement('button');
-  b.className = 'nav-link'; b.textContent = s.label;
-  b.addEventListener('click', () => lenis.scrollTo('#' + s.el.id, { duration: 1.2 }));
+  b.className = 'nav-link'; b.textContent = g.label;
+  b.addEventListener('click', () => lenis.scrollTo('#' + g.target, { duration: 1.2 }));
   nav.appendChild(b);
   return b;
 });
@@ -98,6 +125,11 @@ function copySettings(s) {
   console.log('[copied]', txt);
 }
 
+// 섹션 전환 시 캔버스를 한 번만 지우고(clear), 필요하면 한 프레임에 두 섹션을 겹쳐 그림
+// (pixel → drape 핸드오프). 그래서 각 섹션의 render()는 더 이상 스스로 클리어하지 않게
+// core.js에서 렌더러 autoClear를 꺼둠 — 이 loop가 클리어 시점을 전담.
+renderer.autoClear = false;
+
 let active = null;
 function loop(now) {
   lenis.raf(now || 0);
@@ -113,11 +145,25 @@ function loop(now) {
     active = a;
     hint.textContent = a.hint || '';
     document.body.dataset.active = a.id;
-    links.forEach((d, i) => d.classList.toggle('active', sections[i] === a));
+    links.forEach((d, i) => d.classList.toggle('active', navGroups[i].sections.includes(a)));
     showPanel(a.id);
   }
 
-  a.render(now, s);
+  renderer.clear();
+  const drapeTop = flowDrape.el.offsetTop;
+  const handoff = flowDrape.params.curtainRange;
+  if (s >= drapeTop - handoff && s < drapeTop) {
+    // 핸드오프: pixel은 그 자리에 그대로(맨 뒤) 두고, 그 위로 transition 커튼이
+    // 화면 아래→위로 스윕하며 자연스럽게 덮고, 그 위로 drape 이미지가 (더 아래서
+    // 시작해) 같이 올라오며 맨 앞에 그려짐.
+    flowPixel.render(now, s);
+    renderer.clearDepth();
+    flowDrape.renderCurtain(s);
+    renderer.clearDepth();
+    flowDrape.renderImages(now, s);
+  } else {
+    a.render(now, s);
+  }
   requestAnimationFrame(loop);
 }
 

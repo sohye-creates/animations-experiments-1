@@ -1,7 +1,7 @@
 // 섹션: CURSOR — 커서를 따라다니는 손 아이콘 + 시안 "View/More" 계단형 박스.
 // View/More가 ease로 위로 스크롤, 클릭하면 픽셀로 사각형이 됐다 복귀, 움직이면 다시 계단형.
 // 실제 그림은 DOM/CSS. 이 섹션의 WebGL 렌더는 캔버스를 비우기만 함.
-import { Transform } from 'ogl';
+import * as THREE from 'three';
 import { renderer, camera } from '../core.js';
 
 export function createCursor() {
@@ -21,7 +21,7 @@ export function createCursor() {
     { key: 'btnColor', color: true, info: 'Cursor box color.' },
   ];
 
-  const scene = new Transform();   // 캔버스 비우기용 빈 씬
+  const scene = new THREE.Scene();   // 캔버스 비우기용 빈 씬
 
   const el = document.createElement('section'); el.id = 'sec-cursor';
   const box = document.createElement('div'); box.className = 'btn-demo';
@@ -101,7 +101,7 @@ export function createCursor() {
       // 손 아이콘은 커서 지점에 정확히(오프셋 없이)
       hand.style.left = tx + 'px'; hand.style.top = ty + 'px';
       hand.classList.toggle('show', shown);
-      renderer.render({ scene, camera });              // 캔버스 클리어 (이전 섹션 잔상 제거)
+      renderer.render(scene, camera);              // 캔버스 클리어 (이전 섹션 잔상 제거)
     },
   };
 }

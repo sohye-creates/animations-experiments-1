@@ -1,19 +1,19 @@
 // 섹션: LOGO — 좌(흰 배경)/우(어두운 배경) 반분할. 기본은 이미지 로고가 중앙에.
 // 반쪽에 마우스를 올리면 픽셀 크로스페이드로 이미지 로고 → 워드마크 로고로 전환(픽셀로 사라지고/나타남).
-import { Transform, Plane, Program, Mesh, Texture } from 'ogl';
-import { gl, renderer, camera } from '../core.js';
-
-const hexToRgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+import * as THREE from 'three';
+import { renderer, camera } from '../core.js';
 
 // 흰색 SVG 로고 → 알파 마스크 텍스처 (색은 셰이더에서 입힘)
 function svgTex(url) {
-  const info = { tex: new Texture(gl, { generateMipmaps: false }), aspect: 1 };
+  const tex = new THREE.Texture();
+  tex.generateMipmaps = false;
+  const info = { tex, aspect: 1 };
   const img = new Image();
   img.onload = () => {
     const H = 256, W = Math.max(1, Math.round(H * img.naturalWidth / img.naturalHeight));
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     c.getContext('2d').drawImage(img, 0, 0, W, H);
-    info.tex.image = c; info.aspect = W / H;
+    info.tex.image = c; info.tex.needsUpdate = true; info.aspect = W / H;
   };
   img.src = url;
   return info;
@@ -84,23 +84,24 @@ export function createLogo() {
     { key: 'rightInk', color: true, info: 'Right logo color.' },
   ];
 
-  const scene = new Transform();
+  const scene = new THREE.Scene();
   const imgLogo = svgTex('./assets/logo_white_image.svg');
   const wordLogo = svgTex('./assets/logo_white_word.svg');
 
-  const program = new Program(gl, {
-    vertex: VERT, fragment: FRAG, cullFace: false,
+  const material = new THREE.RawShaderMaterial({
+    vertexShader: VERT, fragmentShader: FRAG, side: THREE.DoubleSide,
     uniforms: {
       tImgLogo: { value: imgLogo.tex }, tWordLogo: { value: wordLogo.tex },
       uImgAspect: { value: 1 }, uWordAspect: { value: 1.3 },
-      uRes: { value: [innerWidth, innerHeight] }, uLogoH: { value: params.logoH }, uCell: { value: params.cell },
+      uRes: { value: new THREE.Vector2(innerWidth, innerHeight) }, uLogoH: { value: params.logoH }, uCell: { value: params.cell },
       uHoverL: { value: 0 }, uHoverR: { value: 0 },
-      uLeftBg: { value: hexToRgb(params.leftBg) }, uRightBg: { value: hexToRgb(params.rightBg) },
-      uLeftInk: { value: hexToRgb(params.leftInk) }, uRightInk: { value: hexToRgb(params.rightInk) },
+      uLeftBg: { value: new THREE.Color(params.leftBg) }, uRightBg: { value: new THREE.Color(params.rightBg) },
+      uLeftInk: { value: new THREE.Color(params.leftInk) }, uRightInk: { value: new THREE.Color(params.rightInk) },
     },
   });
-  const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program });
-  mesh.frustumCulled = false; mesh.setParent(scene);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
 
   const el = document.createElement('section'); el.id = 'sec-logo';
 
@@ -120,13 +121,13 @@ export function createLogo() {
       const lT = isActive && overRow && Math.abs(tx - w * 0.25) < hw ? 1 : 0;
       const rT = isActive && overRow && Math.abs(tx - w * 0.75) < hw ? 1 : 0;
       hl += (lT - hl) * params.ease; hr += (rT - hr) * params.ease;
-      const u = program.uniforms;
-      u.uRes.value = [innerWidth, innerHeight]; u.uLogoH.value = params.logoH; u.uCell.value = params.cell;
+      const u = material.uniforms;
+      u.uRes.value.set(innerWidth, innerHeight); u.uLogoH.value = params.logoH; u.uCell.value = params.cell;
       u.uHoverL.value = hl; u.uHoverR.value = hr;
       u.uImgAspect.value = imgLogo.aspect; u.uWordAspect.value = wordLogo.aspect;
-      u.uLeftBg.value = hexToRgb(params.leftBg); u.uRightBg.value = hexToRgb(params.rightBg);
-      u.uLeftInk.value = hexToRgb(params.leftInk); u.uRightInk.value = hexToRgb(params.rightInk);
-      renderer.render({ scene, camera });
+      u.uLeftBg.value.set(params.leftBg); u.uRightBg.value.set(params.rightBg);
+      u.uLeftInk.value.set(params.leftInk); u.uRightInk.value.set(params.rightInk);
+      renderer.render(scene, camera);
     },
   };
 }

@@ -1,7 +1,6 @@
-// 글자를 2D 캔버스에 그려 OGL 텍스처로 만드는 공용 유틸
+// 글자를 2D 캔버스에 그려 three.js 텍스처로 만드는 공용 유틸
 // tightY=true 면 글자 높이에 딱 맞게(위아래 여백 최소) 캔버스를 잡음
-import { Texture } from 'ogl';
-import { gl } from './core.js';
+import * as THREE from 'three';
 
 export function textTexture(text, fs = 180, ls = 12, tightY = false) {
   const c = document.createElement('canvas');
@@ -29,5 +28,8 @@ export function textTexture(text, fs = 180, ls = 12, tightY = false) {
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(text, c.width / 2, c.height / 2);
   }
-  return { tex: new Texture(gl, { image: c, generateMipmaps: false }), aspect: c.width / c.height };
+  const tex = new THREE.CanvasTexture(c);
+  tex.generateMipmaps = false;
+  tex.minFilter = THREE.LinearFilter;
+  return { tex, aspect: c.width / c.height };
 }

@@ -4,10 +4,8 @@
 //   어두운 그레이·검정 → dark-circle·dark-square(채워짐) 랜덤.
 // 두 이미지를 먼저 합성한 뒤 단 한 번의 그리드로 도트화하므로, 눈동자가 움직여도
 // 그리드 자체는 화면 좌표에 고정돼 흔들리지 않고 밝기만 바뀜(레이어 간 정합성 보장).
-import { Transform, Plane, Program, Mesh, Texture } from 'ogl';
-import { gl, renderer, camera } from '../core.js';
-
-const hexToRgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+import * as THREE from 'three';
+import { renderer, camera } from '../core.js';
 
 const VERT = /* glsl */`
   attribute vec3 position; attribute vec2 uv;
@@ -91,26 +89,33 @@ export function createEye() {
     { key: 'dotColor', color: true, info: 'Dot/outline color.' },
   ];
 
-  const scene = new Transform();
-  const texOpts = { generateMipmaps: false, wrapS: gl.CLAMP_TO_EDGE, wrapT: gl.CLAMP_TO_EDGE, minFilter: gl.LINEAR, magFilter: gl.LINEAR };
-  const tEye = new Texture(gl, texOpts);
-  const tPupil = new Texture(gl, texOpts);
-  const eyeImg = new Image(); eyeImg.onload = () => { tEye.image = eyeImg; }; eyeImg.src = './assets/eye.jpg';
-  const pupilImg = new Image(); pupilImg.onload = () => { tPupil.image = pupilImg; }; pupilImg.src = './assets/pupil.jpg';
+  const scene = new THREE.Scene();
+  const makeTex = () => {
+    const t = new THREE.Texture();
+    t.generateMipmaps = false;
+    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+    t.minFilter = t.magFilter = THREE.LinearFilter;
+    return t;
+  };
+  const tEye = makeTex();
+  const tPupil = makeTex();
+  const eyeImg = new Image(); eyeImg.onload = () => { tEye.image = eyeImg; tEye.needsUpdate = true; }; eyeImg.src = './assets/eye.jpg';
+  const pupilImg = new Image(); pupilImg.onload = () => { tPupil.image = pupilImg; tPupil.needsUpdate = true; }; pupilImg.src = './assets/pupil.jpg';
 
-  const program = new Program(gl, {
-    vertex: VERT, fragment: FRAG, cullFace: false,
+  const material = new THREE.RawShaderMaterial({
+    vertexShader: VERT, fragmentShader: FRAG, side: THREE.DoubleSide,
     uniforms: {
       tEye: { value: tEye }, tPupil: { value: tPupil },
-      uRes: { value: [innerWidth, innerHeight] }, uCursor: { value: [0, 0] },
+      uRes: { value: new THREE.Vector2(innerWidth, innerHeight) }, uCursor: { value: new THREE.Vector2(0, 0) },
       uImgW: { value: params.imgW }, uCell: { value: params.cell },
       uThreshHigh: { value: params.threshHigh }, uThreshLow: { value: params.threshLow },
       uRangeX: { value: params.rangeX }, uRangeY: { value: params.rangeY }, uInvert: { value: params.invert },
-      uDotColor: { value: hexToRgb(params.dotColor) },
+      uDotColor: { value: new THREE.Color(params.dotColor) },
     },
   });
-  const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program });
-  mesh.frustumCulled = false; mesh.setParent(scene);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
 
   const el = document.createElement('section'); el.id = 'sec-eye';
 
@@ -125,13 +130,13 @@ export function createEye() {
     id: 'eye', label: 'eye', hint: 'move your cursor ✦', el, params, controls,
     render() {
       cx += (tx - cx) * params.ease; cy += (ty - cy) * params.ease;
-      const u = program.uniforms;
-      u.uRes.value = [innerWidth, innerHeight]; u.uCursor.value = [cx, cy];
+      const u = material.uniforms;
+      u.uRes.value.set(innerWidth, innerHeight); u.uCursor.value.set(cx, cy);
       u.uImgW.value = params.imgW; u.uCell.value = params.cell;
       u.uThreshHigh.value = params.threshHigh; u.uThreshLow.value = params.threshLow;
       u.uRangeX.value = params.rangeX * IRIS_W_FRAC; u.uRangeY.value = params.rangeY * IRIS_H_FRAC; u.uInvert.value = params.invert;
-      u.uDotColor.value = hexToRgb(params.dotColor);
-      renderer.render({ scene, camera });
+      u.uDotColor.value.set(params.dotColor);
+      renderer.render(scene, camera);
     },
   };
 }

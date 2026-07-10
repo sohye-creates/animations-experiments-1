@@ -72,6 +72,26 @@ canvas#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-even
 .dl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .dl-row:hover { --thumb-h: 118px; }
 .dl-row:hover .dl-thumb { width: 232px; }
+
+/* ---- FLOW: hero-pixels (원형 텍스트 링에서 파티클이 흘러 키홀로 빨려드는 버전) ---- */
+#sec-hero-pixels { height: 240vh; position: relative; background: #000; }
+.hp-canvas { position: fixed; inset: 0; z-index: 1; display: none; }
+
+/* ---- FLOW: pixel~drape 재사용 인스턴스(맨 끝에 이어붙인 연속 시퀀스) — 원본과 동일한 규격 ---- */
+#sec-pixel-flow { height: 100vh; }
+#sec-transition-flow { height: 220vh; }
+#sec-drape-flow { position: relative; }
+
+/* ---- FLOW: video reveal (마지막 drape 아이템이 풀스크린으로 커지며 귀 그래픽 등장) ---- */
+#sec-video-reveal { height: 250vh; position: relative; background: #0a0a0a; }
+.vr-video {
+  position: fixed; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  object-fit: cover; pointer-events: none; display: none; background: #111;
+}
+
+/* ---- FLOW: white out (비디오가 픽셀 커튼과 함께 하양으로 dissolve) ---- */
+#sec-white-out { height: 150vh; position: relative; }
+
 .btn-demo {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: var(--demo-w, 820px); height: var(--demo-h, 460px);
