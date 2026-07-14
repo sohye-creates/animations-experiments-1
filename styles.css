@@ -198,6 +198,22 @@ canvas#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-even
 /* ---- 섹션: dot model (GLB 3D 모델을 오더드 디더링 점 패턴으로 렌더 + 마우스 반응 기울임) ---- */
 #sec-dot-model { height: 100vh; position: relative; background: #000; }
 
+/* ---- 섹션: motion cards (SVG path 따라 6개 박스가 스크롤에 맞춰 도는 데모) ---- */
+/* 섹션 자체는 스크롤 여유(높이)만 제공 — 실제 보이는 내용(.mp-stage)은 fixed로 화면에
+   고정해두고 onEnter/onLeave로 켜고 끔(drape의 top-fade, videoReveal의 video와 같은 패턴). */
+#sec-motion-cards { position: relative; background: linear-gradient(180deg, #FFF 0%, #00F2FF 20%, #00F2FF 80%, #FFF 100%); }
+.mp-stage { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; }
+.mp-path-debug { position: absolute; top: 0; left: 0; pointer-events: none; transition: opacity .2s; }
+.mp-card {
+  position: absolute; top: 0; left: 0; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: #fff; border: none; border-radius: 0; box-shadow: none;
+  font: 500 20px 'Aeonik', system-ui, sans-serif; color: #111;
+}
+.mp-eyebrow { font: 500 11px 'Aeonik', system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #555; }
+.mp-stats { display: flex; flex-direction: column; align-items: center; }
+.mp-stat { font: 500 28px 'Aeonik', system-ui, sans-serif; line-height: 1.2; color: #111; }
+
 .hint {
   position: fixed; left: 16px; bottom: 16px; z-index: 6;
   font-size: 12px; letter-spacing: .04em; color: rgba(255,255,255,.45);

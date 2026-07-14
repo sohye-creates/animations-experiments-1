@@ -75,7 +75,7 @@ export function createEye() {
   const params = {
     imgW: 1200, cell: 5, threshHigh: 0.8, threshLow: 0.24,
     rangeX: 0.20, rangeY: 0.10, ease: 0.1, invert: 0,
-    dotColor: '#595959',
+    dotColor: '#908e8e',
   };
   const controls = [
     { key: 'imgW', min: 300, max: 1600, step: 10, info: 'Displayed eye size (px, square).' },
