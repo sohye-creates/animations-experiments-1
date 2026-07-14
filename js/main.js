@@ -16,6 +16,7 @@ import { createAsciiReveal } from './sections/asciiReveal.js';
 import { createAsciiVideo } from './sections/asciiVideo.js';
 import { createDotModel } from './sections/dotModel.js';
 import { createMotionCards } from './sections/motionCards.js';
+import { createPixelateReveal } from './sections/pixelateReveal.js';
 // import { createVideoReveal } from './sections/videoReveal.js';   // flow에 이렇게(드레이프 뒤 별개 섹션) 넣을 게 아니라서 뺌(코드는 보존 — drape 마지막 아이템과 합쳐지는 형태로 나중에 다시 붙일 계획)
 // import { createWhiteOut } from './sections/whiteOut.js';         // 위 videoReveal의 <video>가 있어야 동작해서 같이 뺌(코드는 보존)
 
@@ -31,7 +32,7 @@ try {
 } catch (e) {}
 
 // 여기에 섹션을 추가하면 자동으로 DOM·네비·전환·패널이 반영됨
-const demoSections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList(), createAsciiReveal(), createAsciiVideo(), createDotModel(), createMotionCards()];
+const demoSections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList(), createAsciiReveal(), createAsciiVideo(), createDotModel(), createMotionCards(), createPixelateReveal()];
 
 // ── FLOW: 지금까지 만든 섹션들을 하나로 이어붙인 연속 시퀀스 (client/partners 직전까지).
 // 기존 개별 데모 섹션들은 위에 그대로 두고, 새 인스턴스로 맨 끝에 이어붙임 — 기존 것은 안 건드림.
@@ -39,6 +40,9 @@ const demoSections = [createEye(), createLogo(), createPixel(), createTransition
 // 이미지 뒤에서 백→흑 커튼으로 전환 — transition은 독립 섹션이 아니라 drape 진입부에 녹아있음)
 // drape 다음(video reveal · white out)은 아직 안 붙임 — drape 마지막 아이템과 이어지는
 // 형태로 다시 설계할 예정(현재처럼 뚝 끊기고 별개 섹션으로 등장하는 방식은 아님).
+// SHOW_FLOW=false: 코드/조립 로직은 그대로 두고 네비게이션·페이지(스크롤 흐름)에서만 뺌 —
+// 다시 보이려면 이 값만 true로.
+const SHOW_FLOW = false;
 const flowHero = createHeroPixels();
 flowHero.label = 'flow · hero';
 const flowPixel = createPixel();
@@ -47,7 +51,7 @@ const flowDrape = createDrape({ introCurtain: true });
 flowDrape.id = 'flow-drape'; flowDrape.label = 'flow · drape'; flowDrape.el.id = 'sec-drape-flow';
 
 const flowSections = [flowHero, flowPixel, flowDrape];
-const sections = [...demoSections, ...flowSections];
+const sections = SHOW_FLOW ? [...demoSections, ...flowSections] : demoSections;
 
 const container = document.getElementById('sections');
 sections.forEach(s => container.appendChild(s.el));
@@ -59,7 +63,7 @@ lenis.resize();
 // 하단 중앙 네비게이션 — 개별 데모 섹션은 각자 버튼, flow 시퀀스는 하나로 묶어 "flow" 버튼 하나만
 const navGroups = [
   ...demoSections.map(s => ({ label: s.label, sections: [s], target: s.el.id })),
-  { label: 'flow', sections: flowSections, target: flowHero.el.id },
+  ...(SHOW_FLOW ? [{ label: 'flow', sections: flowSections, target: flowHero.el.id }] : []),
 ];
 const nav = document.getElementById('nav');
 const links = navGroups.map(g => {
@@ -155,7 +159,7 @@ function loop(now) {
   renderer.clear();
   const drapeTop = flowDrape.el.offsetTop;
   const handoff = flowDrape.params.curtainRange;
-  if (s >= drapeTop - handoff && s < drapeTop) {
+  if (SHOW_FLOW && s >= drapeTop - handoff && s < drapeTop) {
     // 핸드오프: pixel은 그 자리에 그대로(맨 뒤) 두고, 그 위로 transition 커튼이
     // 화면 아래→위로 스윕하며 자연스럽게 덮고, 그 위로 drape 이미지가 (더 아래서
     // 시작해) 같이 올라오며 맨 앞에 그려짐.

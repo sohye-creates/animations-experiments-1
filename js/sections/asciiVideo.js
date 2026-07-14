@@ -30,7 +30,7 @@ export function createAsciiVideo() {
   // 서브픽셀 반올림으로 생기는 글자 사이 미세한 틈 방지).
   const textCanvas = document.createElement('canvas'); textCanvas.className = 'av-text-canvas';
   const tx = textCanvas.getContext('2d');
-  const btn = document.createElement('button'); btn.className = 'av-toggle'; btn.textContent = 'Aa → Text';
+  const btn = document.createElement('button'); btn.className = 'av-toggle'; btn.textContent = 'Aa → Letters';
   frame.append(video, textCanvas, btn);
   el.appendChild(frame);
 
@@ -108,7 +108,7 @@ export function createAsciiVideo() {
   function enterVideoMode() {
     mode = 'video';
     video.style.opacity = '1'; textCanvas.style.opacity = '0';
-    btn.classList.remove('on'); btn.textContent = 'Aa → Text';
+    btn.classList.remove('on'); btn.textContent = 'Aa → Letters';
   }
 
   btn.addEventListener('click', () => { if (!ready) return; mode === 'video' ? enterTextMode() : enterVideoMode(); });

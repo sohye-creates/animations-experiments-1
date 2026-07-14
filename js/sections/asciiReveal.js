@@ -34,7 +34,7 @@ export function createAsciiReveal() {
   // 셀 경계를 내가 통제하므로 그런 틈이 생기지 않음.
   const textCanvas = document.createElement('canvas'); textCanvas.className = 'ai-text-canvas';
   const tx = textCanvas.getContext('2d');
-  const btn = document.createElement('button'); btn.className = 'ai-toggle'; btn.textContent = 'Aa → Text';
+  const btn = document.createElement('button'); btn.className = 'ai-toggle'; btn.textContent = 'Aa → Letters';
   frame.append(img, textCanvas);
   wrap.append(frame, btn);
   el.appendChild(wrap);
@@ -154,7 +154,7 @@ export function createAsciiReveal() {
   function enterImageMode() {
     mode = 'image';
     img.style.opacity = '1'; textCanvas.style.opacity = '0';
-    btn.classList.remove('on'); btn.textContent = 'Aa → Text';
+    btn.classList.remove('on'); btn.textContent = 'Aa → Letters';
   }
 
   btn.addEventListener('click', () => { if (!ready) return; mode === 'image' ? enterTextMode() : enterImageMode(); });

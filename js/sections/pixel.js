@@ -343,7 +343,7 @@ export function createPixel() {
   }
 
   return {
-    id: 'pixel', label: 'pixel reveal', hint: 'hover the highlighted words ✦', el, params, controls,
+    id: 'pixel', label: 'pixel text', hint: 'hover the highlighted words ✦', el, params, controls,
     onEnter() { isActive = true; introStart = null; },
     onLeave() { isActive = false; },
     render(now) {
