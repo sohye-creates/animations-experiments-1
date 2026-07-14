@@ -13,6 +13,8 @@ import { createTransition } from './sections/transition.js';
 import { createLogo } from './sections/logo.js';
 import { createList } from './sections/list.js';
 import { createAsciiReveal } from './sections/asciiReveal.js';
+import { createAsciiVideo } from './sections/asciiVideo.js';
+import { createDotModel } from './sections/dotModel.js';
 // import { createVideoReveal } from './sections/videoReveal.js';   // flow에 이렇게(드레이프 뒤 별개 섹션) 넣을 게 아니라서 뺌(코드는 보존 — drape 마지막 아이템과 합쳐지는 형태로 나중에 다시 붙일 계획)
 // import { createWhiteOut } from './sections/whiteOut.js';         // 위 videoReveal의 <video>가 있어야 동작해서 같이 뺌(코드는 보존)
 
@@ -28,7 +30,7 @@ try {
 } catch (e) {}
 
 // 여기에 섹션을 추가하면 자동으로 DOM·네비·전환·패널이 반영됨
-const demoSections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList(), createAsciiReveal()];
+const demoSections = [createEye(), createLogo(), createPixel(), createTransition(), createDrape(), createPattern(), createCursor(), createList(), createAsciiReveal(), createAsciiVideo(), createDotModel()];
 
 // ── FLOW: 지금까지 만든 섹션들을 하나로 이어붙인 연속 시퀀스 (client/partners 직전까지).
 // 기존 개별 데모 섹션들은 위에 그대로 두고, 새 인스턴스로 맨 끝에 이어붙임 — 기존 것은 안 건드림.

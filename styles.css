@@ -178,6 +178,26 @@ canvas#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-even
 .ai-toggle:hover { background: #fff; color: #000; }
 .ai-toggle.on { background: #C6F000; color: #000; border-color: #C6F000; }
 
+/* ---- 섹션: ascii video (화면 전체를 덮는 비디오 → 실시간 문자 변환 데모) ---- */
+#sec-ascii-video { height: 100vh; position: relative; background: #000; overflow: hidden; }
+.av-frame { position: absolute; inset: 0; }
+.av-video, .av-text-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.av-video { object-fit: cover; transition: opacity .5s ease; }
+.av-text-canvas {
+  pointer-events: none; opacity: 0; transition: opacity .2s ease;   /* 글자/배경색은 JS가 params로 채움 */
+}
+.av-toggle {
+  position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 2;
+  appearance: none; border: 1px solid rgba(255,255,255,.25); background: transparent; color: #fff;
+  font: 500 12px 'Aeonik', system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase;
+  padding: 10px 20px; border-radius: 999px; cursor: pointer; transition: background .25s, color .25s;
+}
+.av-toggle:hover { background: #fff; color: #000; }
+.av-toggle.on { background: #C6F000; color: #000; border-color: #C6F000; }
+
+/* ---- 섹션: dot model (GLB 3D 모델을 오더드 디더링 점 패턴으로 렌더 + 마우스 반응 기울임) ---- */
+#sec-dot-model { height: 100vh; position: relative; background: #000; }
+
 .hint {
   position: fixed; left: 16px; bottom: 16px; z-index: 6;
   font-size: 12px; letter-spacing: .04em; color: rgba(255,255,255,.45);
